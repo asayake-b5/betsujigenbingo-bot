@@ -1,5 +1,4 @@
-const { ActionRowBuilder, MessageFlags, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } = require('discord.js');
-const { knex } = require('../../index.js')
+const { ActionRowBuilder, MessageFlags, InteractionContextType, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } = require('discord.js');
 
 const numberToEmoji = {
   0: "0️⃣",
@@ -12,13 +11,41 @@ const numberToEmoji = {
   7: "7️⃣",
   8: "8️⃣",
   9: "9️⃣",
+  A: '🇦',
+  B: '🇧',
+  C: '🇨',
+  D: '🇩',
+  E: '🇪',
+  F: '🇪',
+  G: '🇬',
+  H: '🇬',
+  I: '🇮',
+  J: '🇯',
 }
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('reserve')
-    .setDescription('Take your slot in the bingo!'),
+    .setContexts([InteractionContextType.Guild])
+    .setDescription('Take your slot in the bingo!')
+    .addStringOption(option =>
+      option.setName('book_title')
+        .setDescription("The book you'll read")
+        .setRequired(true)
+    )
+  ,
   async execute(interaction) {
+
+    const book = interaction.options.getString('book_title');
+    if (book === null) {
+      await interaction.reply({ content: "Please specify the book you'll be reserving with, thank you!", flags: MessageFlags.Ephemeral });
+      return;
+    }
+    console.log("Reserve");
+    console.log(book);
+    console.log(interaction);
+    console.log(interaction.member.id);
+
     // CBA to share the connection
     const knex = require('knex')({
       client: 'sqlite3', // or 'better-sqlite3'
@@ -64,7 +91,7 @@ module.exports = {
 
     const row = new ActionRowBuilder()
       .addComponents(select)
-    const response = await interaction.reply({ components: [row], flags: MessageFlags.Ephemeral });
+    const response = await interaction.reply({ content: "Select your square, press dissmiss if you make a mistake", components: [row], flags: MessageFlags.Ephemeral });
 
     const collectorFilter = i => i.user.id === interaction.user.id;
 
@@ -87,7 +114,7 @@ module.exports = {
 
         const select2 = new StringSelectMenuBuilder()
           .setCustomId('square_select')
-          .setPlaceholder('Select your square!')
+          .setPlaceholder('Select your square! Click dissmiss if you made a mistake')
           .addOptions(
             options
           );
@@ -122,6 +149,7 @@ module.exports = {
             .update({
               status: "reserved",
               id_rel: data.user_id,
+              book_name: book,
               reserved_time: data.timestamp,
             });
 
@@ -142,7 +170,7 @@ module.exports = {
               current_col: data.prompt_col,
               current_row: data.prompt_row,
             });
-          await confirmation2.reply({ content: "<@" + data.user_id + "> has reserved the prompt " + data.prompt_row + "-" + data.prompt_col + " - " + prompt_label[0].prompt + "!" });
+          await confirmation2.reply({ content: "<@" + data.user_id + "> has reserved the prompt " + data.prompt_row + "-" + data.prompt_col + " - " + prompt_label[0].prompt + " with the book " + book + "!" });
         }
 
       }

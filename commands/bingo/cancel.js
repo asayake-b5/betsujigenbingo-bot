@@ -1,9 +1,9 @@
-const { ActionRowBuilder, ButtonStyle, ButtonBuilder, MessageFlags, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } = require('discord.js');
-const { knex } = require('../../index.js')
+const { ActionRowBuilder, ButtonStyle, ButtonBuilder, InteractionContextType, MessageFlags, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('cancel')
+    .setContexts([InteractionContextType.Guild])
     .setDescription('Cancel your reservation in the bingo'),
   async execute(interaction) {
     // CBA to share the connection

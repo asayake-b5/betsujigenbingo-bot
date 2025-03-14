@@ -1,21 +1,12 @@
-
-const { ActionRowBuilder, ButtonStyle, ButtonBuilder, MessageFlags, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } = require('discord.js');
-const { knex } = require('../../index.js')
+const { InteractionContextType, ActionRowBuilder, ButtonStyle, ButtonBuilder, MessageFlags, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('check')
+    .setName('complete')
+    .setContexts([InteractionContextType.Guild])
     .setDescription('Complete your bingo mark !')
-    .addStringOption(option =>
-      option.setName('book')
-        .setDescription("The book you read")
-        .setRequired(true)
-    )
   ,
   async execute(interaction) {
-    const book = interaction.options.getString('book');
-
-
     // CBA to share the connection
     const knex = require('knex')({
       client: 'sqlite3', // or 'better-sqlite3'
@@ -54,7 +45,7 @@ module.exports = {
     const row = new ActionRowBuilder()
       .addComponents(confirm, cancel);
 
-    const response = await interaction.reply({ content: 'You are about to complete \"' + prompt[0].prompt + '\" with book "' + book + '", confirm?', components: [row], flags: MessageFlags.Ephemeral });
+    const response = await interaction.reply({ content: 'You are about to complete \"' + prompt[0].prompt + '\" with book "' + prompt[0].book_name + '", confirm?', components: [row], flags: MessageFlags.Ephemeral });
 
     const collectorFilter = i => i.user.id === interaction.user.id;
 
@@ -70,7 +61,6 @@ module.exports = {
           })
           .update({
             status: "complete",
-            book_name: book,
             clear_time: Date.now(),
           });
 
@@ -79,11 +69,10 @@ module.exports = {
             discord_id: confirmation.member.user.id,
           })
           .update({
-            ok_to_reserve: false,
             current_col: null,
             current_row: null,
           });
-        await confirmation.reply({ content: "<@" + confirmation.member.user.id + "> has completed prompt " + prompt[0].prompt + "with book '" + book + "' !" });
+        await confirmation.reply({ content: "<@" + confirmation.member.user.id + "> has completed prompt " + prompt[0].prompt + " with book " + prompt[0].book_name + "' !" });
       } else if (confirmation.customId === 'cancel') {
         await confirmation.update({ content: 'Action cancelled', components: [] });
       }
